@@ -5,23 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PINKLAINE PRODUCT MANAGEMENT BARCODE SYSTEM</title>
     <script src="https://cdn.tailwindcss.com"></script>  <!-- Tailwind CDN -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-100">
 
     <!-- Main Container -->
-    <div class="flex justify-center items-center min-h-screen bg-gray-200">
+    <div class="flex justify-center items-start min-h-screen bg-gray-200">
 
-        <!-- Title Section -->
-        <div class="absolute top-10 text-center w-full">
-            <h1 class="text-4xl font-extrabold text-indigo-600 tracking-widest">PINKLAINE PRODUCT MANAGEMENT BARCODE SYSTEM</h1>
-            <p class="mt-2 text-xl text-gray-600">Efficient product management with barcode generation</p>
-        </div>
+        <!-- Content Box for Product Details -->
+        <div class="flex flex-col bg-white rounded-lg shadow-xl p-8 w-full max-w-5xl mt-20">
 
-        <!-- Content Box -->
-        <div class="flex bg-white rounded-lg shadow-xl p-8 w-full max-w-5xl mt-20">
-
-            <!-- Product Details Form -->
-            <div class="flex-1 mr-8">
+            <!-- Product Details Section -->
+            <div class="mb-8">
                 <h2 class="text-2xl font-semibold text-center text-gray-800 mb-6">Product Details</h2>
 
                 <form method="POST" action="/add" class="space-y-4">
@@ -50,68 +45,190 @@
                     </div>
                     <div class="flex justify-center">
                         <button type="button" id="generate-barcode" class="w-60 bg-green-500 text-white py-2 text-lg font-semibold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200">Generate Barcode</button>
-
                     </div>
                 </form>
             </div>
 
-            <!-- Barcode Display Section -->
-            <!-- Barcode Display Section -->
-<!-- Barcode Display Section -->
-<div class="flex-1 flex flex-col items-center justify-center bg-gray-50 p-6 rounded-lg border-2 border-gray-300">
-    <h3 class="text-lg font-semibold text-gray-700 mb-4">Generated Barcode</h3>
+            <!-- Generated Barcode Section -->
+            <div class="flex flex-col items-center justify-center bg-gray-300 p-6 rounded-lg border-2 border-gray-300">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Generated Barcode</h3>
 
-    <div id="barcode-placeholder" class="relative w-full flex flex-col items-center mb-6">
-        <!-- Barcode Image -->
-        <img id="barcode-image" src="" alt="Generated Barcode" class="max-w-xs">
+                <div id="barcode-placeholder" class="relative w-full flex flex-col items-center mb-6">
+                    <!-- Barcode Image -->
+                    <img id="barcode-image" src="" alt="" class="max-w-xs">
 
-        <!-- White Box Overlay (Covering only the barcode number) -->
-        <div class="absolute bottom-16 left-0 right-0 bg-white z-10 h-6"></div>
+                    <!-- White Box Overlay (Covering only the barcode number) -->
+                    <div id="barcode-overlay" class="absolute bottom-16 left-15 bg-white z-10 h-6"></div>
 
-        <!-- Barcode Text (Positioned above the white box) -->
-        <div id="barcode-text" class="absolute bottom-16 w-[240px] mx-auto text-center text-sm text-gray-800 font-semibold leading-tight z-20"></div>
-        
+                    <!-- Barcode Text (Positioned above the white box) -->
+                    <div id="barcode-text" class="absolute bottom-16 left-1/2 right-0 transform -translate-x-1/2 text-center text-sm text-gray-800 font-bold leading-tight z-20"></div>
+                </div>
+
+                <button id="print-barcode" class="w-32 bg-purple-500 text-white py-2 rounded-md hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    onclick="printBarcode()">Print Barcode</button>
+            </div>
+
+        </div>
+
+        <!-- Product List Container (Larger) -->
+<div class="flex flex-col bg-white rounded-lg shadow-xl p-8 w-full mt-20 ml-4"> <!-- Updated width to w-full -->
+
+    <h2 class="text-2xl font-semibold text-center text-gray-800 mb-6">Product List</h2>
+
+    <!-- Search and Sort Controls -->
+    <div class="flex justify-between items-center mb-4">
+        <input type="text" id="search" placeholder="Search by Barcode or Name" class="p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-1/2">
+        <button id="clear-list" class="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">Clear</button>
+        <select id="sort-by" class="p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="barcode">Sort by Barcode</option>
+            <option value="name">Sort by Name</option>
+            <option value="price">Sort by Price</option>
+        </select>
     </div>
 
-    <button id="print-barcode" class="w-32 bg-purple-500 text-white py-2 rounded-md hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        onclick="printBarcode()">Print Barcode</button>
+    <!-- Product List Table -->
+    <table class="min-w-full table-auto text-left">
+        <thead>
+            <tr>
+                <th class="px-4 py-2 border-b">Barcode</th>
+                <th class="px-4 py-2 border-b">Product Name</th>
+                <th class="px-4 py-2 border-b">Price</th>
+                <th class="px-4 py-2 border-b">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="product-list">
+            <!-- Records from products.db will be displayed here -->
+        </tbody>
+    </table>
 </div>
-       </div>
+
     </div>
 
- <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const generateBtn = document.getElementById('generate-barcode');
-        const printBtn = document.getElementById('print-barcode');
-        const barcodeText = document.getElementById('barcode-text');
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const generateBtn = document.getElementById('generate-barcode');
+            const barcodeText = document.getElementById('barcode-text');
+            const barcodeImage = document.getElementById('barcode-image');
+            const overlay = document.getElementById('barcode-overlay');
+            const searchInput = document.getElementById('search');
+            const clearListBtn = document.getElementById('clear-list');
+            const sortSelect = document.getElementById('sort-by');
+            const productListContainer = document.getElementById('product-list');
 
-        generateBtn.addEventListener('click', function () {
-            const barcode = document.getElementById('barcode').value.trim();
-            const price = document.getElementById('price').value.trim();
-            const name = document.getElementById('name').value.trim();
+            let productList = []; // This will hold the product data from products.db
 
-            if (barcode && price && name) {
-                const url = `/generate_barcode?data=${encodeURIComponent(barcode)}&price=${encodeURIComponent(price)}&name=${encodeURIComponent(name)}`;
-                document.getElementById('barcode-image').src = url;
+            generateBtn.addEventListener('click', function () {
+                const barcode = document.getElementById('barcode').value.trim();
+                const price = document.getElementById('price').value.trim();
+                const name = document.getElementById('name').value.trim();
 
-                // 👉 Set barcode number only
-                barcodeText.innerText = barcode;
-            } else {
-                alert("Please complete Barcode, Product Name, and Price fields.");
+                if (barcode && price && name) {
+                    const url = `/generate_barcode?data=${encodeURIComponent(barcode)}&price=${encodeURIComponent(price)}&name=${encodeURIComponent(name)}`;
+                    barcodeImage.src = url;
+
+                    // 👉 Wrap each character with a <span> tag
+                    barcodeText.innerHTML = barcode.split('').map(char => `<span>${char}</span>`).join('');
+
+                    barcodeImage.onload = function () {
+                        adjustTextWidthAndSize();
+                    };
+
+                    setTimeout(adjustTextWidthAndSize, 300); // fallback in case onload fails
+                } else {
+                    alert("Please complete Barcode, Product Name, and Price fields.");
+                }
+            });
+
+            function adjustTextWidthAndSize() {
+                const imageWidth = barcodeImage.offsetWidth;  // Get the width of the barcode image
+                const digitCount = barcodeText.innerText.length; // Number of characters in the barcode text
+                const fontSize = Math.max(10, imageWidth / (digitCount * 1.3)); // Adjust font size based on barcode width
+                const spacing = (imageWidth - digitCount * fontSize) / (digitCount - 1) + 6; // Adjust spacing between characters
+
+                // Adjust the width of barcode text and font size
+                barcodeText.style.width = imageWidth + 'px';
+                barcodeText.style.fontSize = fontSize + 'px';
+
+                // Adjust the spacing between the barcode text characters
+                const spans = barcodeText.getElementsByTagName('span');
+                for (let span of spans) {
+                    span.style.marginRight = `${spacing}px`;
+                }
+
+                // Adjust the overlay's width
+                overlay.style.width = `${imageWidth}px`;
+
+                // Adjust the position of the overlay relative to the barcode container
+                const barcodeContainer = barcodeImage.closest('.barcode-container');
+                const containerPadding = parseInt(window.getComputedStyle(barcodeContainer).paddingLeft) || 0; // Get container padding
+
+                // Set the overlay position to align exactly with the barcode width
+                overlay.style.left = `${containerPadding}px`;
             }
+
+            function loadProductList() {
+                fetch('/products')
+                    .then(response => response.json())
+                    .then(data => {
+                        productList = data;
+                        renderProductList();
+                    });
+            }
+
+            function renderProductList() {
+                productListContainer.innerHTML = '';
+                productList.forEach(product => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-4 py-2 border-b">${product.barcode}</td>
+                        <td class="px-4 py-2 border-b">${product.name}</td>
+                        <td class="px-4 py-2 border-b">${product.price}</td>
+                        <td class="px-4 py-2 border-b">
+                            <button onclick="deleteProduct(${product.id})" class="text-red-600 hover:text-red-800">Delete</button>
+                        </td>
+                    `;
+                    productListContainer.appendChild(row);
+                });
+            }
+
+            function deleteProduct(id) {
+                if (confirm("Are you sure you want to delete this product?")) {
+                    fetch(`/delete_product/${id}`, {
+                        method: 'DELETE'
+                    })
+                    .then(() => {
+                        productList = productList.filter(product => product.id !== id);
+                        renderProductList();
+                    });
+                }
+            }
+
+            searchInput.addEventListener('input', function () {
+                const query = searchInput.value.toLowerCase();
+                const filteredProducts = productList.filter(product =>
+                    product.barcode.toLowerCase().includes(query) ||
+                    product.name.toLowerCase().includes(query)
+                );
+                renderProductList(filteredProducts);
+            });
+
+            clearListBtn.addEventListener('click', function () {
+                searchInput.value = '';
+                renderProductList();
+            });
+
+            sortSelect.addEventListener('change', function () {
+                const sortBy = sortSelect.value;
+                const sortedProducts = [...productList].sort((a, b) => {
+                    if (sortBy === 'barcode') return a.barcode.localeCompare(b.barcode);
+                    if (sortBy === 'name') return a.name.localeCompare(b.name);
+                    if (sortBy === 'price') return a.price - b.price;
+                });
+                renderProductList(sortedProducts);
+            });
+
+            loadProductList(); // Initially load product list when the page is ready
         });
-    });
-
-    function printBarcode() {
-        const barcode = document.getElementById('barcode').value.trim();
-        const price = document.getElementById('price').value.trim();
-        const name = document.getElementById('name').value.trim();
-
-        window.location.href = `/print_barcode?data=${barcode}&price=${price}&name=${name}`;
-    }
-</script>
-
-
-
+    </script>
 </body>
 </html>

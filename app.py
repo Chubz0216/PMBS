@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, redirect, url_for
+from flask import Flask, render_template, request, send_file, redirect, url_for, jsonify
 import sqlite3
 import io
 from barcode import Code128
@@ -6,7 +6,7 @@ from barcode.writer import ImageWriter
 from PIL import Image, ImageDraw, ImageFont
 import win32print
 import win32ui
-from PIL import Image, ImageDraw, ImageFont, ImageWin
+from PIL import ImageWin
 
 app = Flask(__name__)
 
@@ -51,7 +51,7 @@ def generate_barcode():
     # Barcode image generation with custom width
     barcode_img_io = io.BytesIO()
     options = {
-        'module_width': 0.5,  # Pagdagdag ng width ng barcode (default is 0.2)
+        'module_width': 0.5,  # Increase the width of the barcode
     }
     barcode = Code128(data, writer=ImageWriter())
     barcode.write(barcode_img_io, options=options)
@@ -61,25 +61,25 @@ def generate_barcode():
     barcode_image = Image.open(barcode_img_io)
 
     # Create new image with space for text
-    new_height = barcode_image.height + 100  # Mas mataas na espasyo para sa text
+    new_height = barcode_image.height + 100  # Increase the space for text
     new_img = Image.new("RGB", (barcode_image.width, new_height), "white")
     new_img.paste(barcode_image, (0, 0))
 
     # Add price and name text with bigger font
     draw = ImageDraw.Draw(new_img)
     try:
-        # Gamitin ang custom font para sa mas malaking text
-        font_price = ImageFont.truetype("arial.ttf", 50)  # Gamitin ang Arial font at size 20
-        font_name = ImageFont.truetype("arial.ttf", 45)   # Mas maliit na font para sa pangalan
+        # Use bold font for price and a normal font for the product name
+        font_price = ImageFont.truetype("arialbd.ttf", 43)  # Bold Arial font
+        font_name = ImageFont.truetype("arial.ttf", 40)   # Regular Arial font for name
     except IOError:
         font_price = ImageFont.load_default()
         font_name = ImageFont.load_default()
 
-    # Add price text
-    draw.text((10, barcode_image.height + -30), f"P{price}", font=font_price, fill="black")
+    # Add price text with the peso sign
+    draw.text((10, barcode_image.height + -30), f"₱ {price}", font=font_price, fill="black")
 
     # Add product name text
-    draw.text((10, barcode_image.height + 36), name, font=font_name, fill="black")
+    draw.text((10, barcode_image.height + 30), name, font=font_name, fill="black")
 
     # Save result to BytesIO
     final_io = io.BytesIO()
@@ -114,9 +114,19 @@ def print_barcode():
 
     # Add price and name text
     draw = ImageDraw.Draw(new_img)
-    font = ImageFont.load_default()
-    draw.text((10, barcode_image.height + 30), f"P{price}", font=font, fill="black")
-    draw.text((10, barcode_image.height + 25), name, font=font, fill="black")
+    try:
+        # Use bold font for price and a regular font for the product name
+        font_price = ImageFont.truetype("arialbd.ttf", 43)  # Bold Arial font
+        font_name = ImageFont.truetype("arial.ttf", 40)  # Regular Arial font
+    except IOError:
+        font_price = ImageFont.load_default()
+        font_name = ImageFont.load_default()
+
+    # Add price text with peso sign
+    draw.text((10, barcode_image.height + 10), f"₱ {price}", font=font_price, fill="black")
+
+    # Add product name text
+    draw.text((10, barcode_image.height + 30), name, font=font_name, fill="black")
 
     # Prepare the image for printing (Windows specific)
     printer_name = win32print.GetDefaultPrinter()  # Get the default printer
@@ -132,6 +142,22 @@ def print_barcode():
     printer.EndDoc()
 
     return "Barcode sent to printer"
+@app.route('/products')
+def products():
+    conn = get_db_connection()
+    products = conn.execute('SELECT * FROM products').fetchall()
+    conn.close()
+    return render_template('index.html', products=products)
+
+@app.route('/products', methods=['GET'])
+def get_products():
+    conn = sqlite3.connect('products.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM products")
+    rows = cursor.fetchall()
+    products = [{"id": row[0], "barcode": row[1], "name": row[2], "price": row[3]} for row in rows]
+    conn.close()
+    return jsonify(products)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -76,7 +76,7 @@ def generate_barcode():
         font_name = ImageFont.load_default()
 
     # Add price text
-    draw.text((10, barcode_image.height + -5), f"P{price}", font=font_price, fill="black")
+    draw.text((10, barcode_image.height + -30), f"P{price}", font=font_price, fill="black")
 
     # Add product name text
     draw.text((10, barcode_image.height + 36), name, font=font_name, fill="black")
@@ -115,7 +115,7 @@ def print_barcode():
     # Add price and name text
     draw = ImageDraw.Draw(new_img)
     font = ImageFont.load_default()
-    draw.text((10, barcode_image.height + 5), f"P{price}", font=font, fill="black")
+    draw.text((10, barcode_image.height + 30), f"P{price}", font=font, fill="black")
     draw.text((10, barcode_image.height + 25), name, font=font, fill="black")
 
     # Prepare the image for printing (Windows specific)

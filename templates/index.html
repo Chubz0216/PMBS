@@ -56,23 +56,34 @@
             </div>
 
             <!-- Barcode Display Section -->
-            <div class="flex-1 flex flex-col items-center justify-center bg-gray-50 p-6 rounded-lg border-2 border-gray-300">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4">Generated Barcode</h3>
-                <div id="barcode-placeholder" class="w-full flex flex-col items-center mb-6">
-                    <img id="barcode-image" src="" alt="Generated Barcode" class="max-w-xs">
-                <div id="barcode-text" class="text-center mt-2 text-sm text-gray-700 whitespace-pre-line"></div>
-</div>
-                <button id="print-barcode" class="w-32 bg-purple-500 text-white py-2 rounded-md hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        onclick="printBarcode()">Print Barcode</button>
+            <!-- Barcode Display Section -->
+<!-- Barcode Display Section -->
+<div class="flex-1 flex flex-col items-center justify-center bg-gray-50 p-6 rounded-lg border-2 border-gray-300">
+    <h3 class="text-lg font-semibold text-gray-700 mb-4">Generated Barcode</h3>
 
-            </div>
-        </div>
+    <div id="barcode-placeholder" class="relative w-full flex flex-col items-center mb-6">
+        <!-- Barcode Image -->
+        <img id="barcode-image" src="" alt="Generated Barcode" class="max-w-xs">
+
+        <!-- White Box Overlay (Covering only the barcode number) -->
+        <div class="absolute bottom-16 left-0 right-0 bg-white z-10 h-6"></div>
+
+        <!-- Barcode Text (Positioned above the white box) -->
+        <div id="barcode-text" class="absolute bottom-16 w-[240px] mx-auto text-center text-sm text-gray-800 font-semibold leading-tight z-20"></div>
+        
     </div>
 
-    <script>
+    <button id="print-barcode" class="w-32 bg-purple-500 text-white py-2 rounded-md hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        onclick="printBarcode()">Print Barcode</button>
+</div>
+       </div>
+    </div>
+
+ <script>
     document.addEventListener("DOMContentLoaded", function () {
         const generateBtn = document.getElementById('generate-barcode');
         const printBtn = document.getElementById('print-barcode');
+        const barcodeText = document.getElementById('barcode-text');
 
         generateBtn.addEventListener('click', function () {
             const barcode = document.getElementById('barcode').value.trim();
@@ -80,40 +91,24 @@
             const name = document.getElementById('name').value.trim();
 
             if (barcode && price && name) {
-                const combinedData = `${barcode}\n${price}\n${name}`;
-                const encoded = encodeURIComponent(combinedData);
-                const imageUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encoded}&code=Code128&translate-esc=true`;
+                const url = `/generate_barcode?data=${encodeURIComponent(barcode)}&price=${encodeURIComponent(price)}&name=${encodeURIComponent(name)}`;
+                document.getElementById('barcode-image').src = url;
 
-                document.getElementById('barcode-image').src = imageUrl;
+                // 👉 Set barcode number only
+                barcodeText.innerText = barcode;
             } else {
                 alert("Please complete Barcode, Product Name, and Price fields.");
             }
         });
-
-        document.getElementById('generate-barcode').addEventListener('click', function () {
-    const barcode = document.getElementById('barcode').value.trim();
-    const price = document.getElementById('price').value.trim();
-    const name = document.getElementById('name').value.trim();
-
-    if (barcode && price && name) {
-        const url = `/generate_barcode?data=${encodeURIComponent(barcode)}&price=${encodeURIComponent(price)}&name=${encodeURIComponent(name)}`;
-        document.getElementById('barcode-image').src = url;
-    } else {
-        alert("Please complete Barcode, Product Name, and Price fields.");
-    }
-});
     });
 
-        function printBarcode() {
-        // Data for the barcode (replace with dynamic values as needed)
-        let data = '123456'; // Replace with the actual barcode data
-        let price = '99.99'; // Replace with the actual price
-        let name = 'Product Name'; // Replace with the actual product name
+    function printBarcode() {
+        const barcode = document.getElementById('barcode').value.trim();
+        const price = document.getElementById('price').value.trim();
+        const name = document.getElementById('name').value.trim();
 
-        // Redirect to the print route with query parameters
-        window.location.href = `/print_barcode?data=${data}&price=${price}&name=${name}`;
+        window.location.href = `/print_barcode?data=${barcode}&price=${price}&name=${name}`;
     }
-
 </script>
 
 

@@ -10,7 +10,7 @@ from PIL import ImageWin
 
 app = Flask(__name__)
 
-# Database connection
+# Database connection with context manager
 def get_db_connection():
     conn = sqlite3.connect('products.db')
     conn.row_factory = sqlite3.Row
@@ -18,9 +18,8 @@ def get_db_connection():
 
 @app.route('/')
 def index():
-    conn = get_db_connection()
-    products = conn.execute('SELECT * FROM products').fetchall()
-    conn.close()
+    with get_db_connection() as conn:
+        products = conn.execute('SELECT * FROM products').fetchall()
     return render_template('index.html', products=products)
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -30,11 +29,10 @@ def add_product():
         name = request.form['name']
         price = request.form['price']
 
-        conn = get_db_connection()
-        conn.execute('INSERT INTO products (barcode, name, price) VALUES (?, ?, ?)',
-                     (barcode, name, price))
-        conn.commit()
-        conn.close()
+        with get_db_connection() as conn:
+            conn.execute('INSERT INTO products (barcode, name, price) VALUES (?, ?, ?)',
+                         (barcode, name, price))
+            conn.commit()
         return redirect(url_for('index'))
 
     return render_template('add_product.html')
@@ -142,22 +140,12 @@ def print_barcode():
     printer.EndDoc()
 
     return "Barcode sent to printer"
-@app.route('/products')
-def products():
-    conn = get_db_connection()
-    products = conn.execute('SELECT * FROM products').fetchall()
-    conn.close()
-    return render_template('index.html', products=products)
 
-@app.route('/products', methods=['GET'])
+@app.route('/products')
 def get_products():
-    conn = sqlite3.connect('products.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM products")
-    rows = cursor.fetchall()
-    products = [{"id": row[0], "barcode": row[1], "name": row[2], "price": row[3]} for row in rows]
-    conn.close()
-    return jsonify(products)
+    with get_db_connection() as conn:
+        products = conn.execute('SELECT * FROM products').fetchall()
+    return jsonify([{"id": row["id"], "barcode": row["barcode"], "name": row["name"], "price": row["price"]} for row in products])
 
 if __name__ == '__main__':
     app.run(debug=True)

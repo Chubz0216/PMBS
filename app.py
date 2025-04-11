@@ -147,5 +147,18 @@ def get_products():
         products = conn.execute('SELECT * FROM products').fetchall()
     return jsonify([{"id": row["id"], "barcode": row["barcode"], "name": row["name"], "price": row["price"]} for row in products])
 
+@app.route('/delete/<barcode>', methods=['DELETE'])
+def delete_product(barcode):
+    try:
+        conn = sqlite3.connect('products.db')  # adjust path
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM products WHERE barcode = ?', (barcode,))
+        conn.commit()
+        conn.close()
+        return '', 204
+    except Exception as e:
+        return str(e), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)

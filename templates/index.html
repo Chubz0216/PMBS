@@ -52,7 +52,7 @@
             </div>
 
             <!-- Generated Barcode Section -->
-            <div class="flex flex-col items-center justify-center bg-gray-300 p-6 rounded-lg border-2 border-gray-300 sm:min-h-[600px] md:min-h-[700px] lg:min-h-[800px] xl:min-h-[850px]">
+            <div class="flex flex-col items-center justify-center bg-gray-300 p-6 rounded-lg border-2 border-gray-300 sm:min-h-[300px]">
                 <h3 class="text-lg font-semibold text-gray-700 mb-4">Generated Barcode</h3>
 
                 <div id="barcode-placeholder" class="relative w-full flex flex-col items-center mb-6">
@@ -71,238 +71,201 @@
             </div>
 
         </div>
+<!-- Product List Container -->
+<div class="flex flex-col bg-white rounded-lg shadow-xl p-8 w-full mt-20 ml-4 max-h-[850px] overflow-y-auto space-y-4">
 
-        <!-- Product List Container (Larger) -->
-<div class="flex flex-col bg-white rounded-lg shadow-xl p-8 w-full mt-20 ml-4"> <!-- Updated width to w-full -->
+    <!-- Sticky Header -->
+    <h2 class="sticky top-0 z-10 text-2xl font-semibold text-center text-white bg-indigo-500 py-2 rounded mb-6">
+        Product List
+    </h2>
 
-   <h2 class="text-2xl font-semibold text-center text-white bg-indigo-500 py-2 rounded mb-6">Product List</h2>
-
-
-    <!-- Search and Sort Controls -->
-    <div class="flex justify-between items-center mb-4">
-        <input type="text" id="search" placeholder="Search by Barcode or Name" class="p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-1/2">
-        <button id="clear-list" class="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">Clear</button>
-        <select id="sort-by" class="p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-            <option value="barcode">Sort by Barcode</option>
-            <option value="name">Sort by Name</option>
-            <option value="price">Sort by Price</option>
-        </select>
+    <!-- Sticky Search and Sort Controls -->
+    <div class="sticky top-[60px] z-10 bg-white pt-4 pb-2 rounded">
+        <div class="flex justify-between items-center mb-4">
+            <input type="text" id="search" placeholder="Search by Barcode or Name"
+                class="p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-1/2">
+            <button id="clear-list"
+                class="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                Clear
+            </button>
+            <select id="sort-by"
+                class="p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="barcode">Sort by Barcode</option>
+                <option value="name">Sort by Name</option>
+                <option value="price">Sort by Price</option>
+            </select>
+        </div>
     </div>
-    <table class="table">
-    <thead>
-        <tr>
-            <th>Barcode</th>
-            <th>Product Name</th>
-            <th>Price</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody id="product-list">
-        <!-- JS will render here -->
-    </tbody>
-</table>
+   <table class="min-w-full table-auto border-collapse divide-y divide-gray-200">
 
-    <!-- Product List Table -->
-<ul  class="divide-y divide-gray-200">
-    <!-- JS will render the list items here -->
-</ul>
-</div>
+    <thead class="sticky top-[130px] bg-gray-100 z-10">
+      <tr>
+        <th class="px-4 py-2 text-center font-semibold">#</th>
+        <th class="px-4 py-2 text-center font-semibold">Barcode</th>
+        <th class="px-4 py-2 text-center font-semibold">Product Name</th>
+        <th class="px-4 py-2 text-center font-semibold">Price</th>
+        <th class="px-4 py-2 text-center font-semibold">Actions</th>
+      </tr>
+    </thead>
+
+        <tbody id="product-list">
+
+        </tbody>
+    </table>
+    </table>
+
+            <!-- Product List Table -->
+        <ul  class="divide-y divide-gray-200">
+            <!-- JS will render the list items here -->
+        </ul>
+        </div>
 
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const generateBtn = document.getElementById('generate-barcode');
-            const barcodeText = document.getElementById('barcode-text');
-            const barcodeImage = document.getElementById('barcode-image');
-            const overlay = document.getElementById('barcode-overlay');
-            const searchInput = document.getElementById('search');
-            const clearListBtn = document.getElementById('clear-list');
-            const sortSelect = document.getElementById('sort-by');
-            const productListContainer = document.getElementById('product-list');
+document.addEventListener("DOMContentLoaded", function () {
+    const generateBtn = document.getElementById('generate-barcode');
+    const barcodeText = document.getElementById('barcode-text');
+    const barcodeImage = document.getElementById('barcode-image');
+    const overlay = document.getElementById('barcode-overlay');
+    const searchInput = document.getElementById('search');
+    const clearListBtn = document.getElementById('clear-list');
+    const sortSelect = document.getElementById('sort-by');
+    const productListContainer = document.getElementById('product-list');
 
-            let productList = []; // This will hold the product data from products.db
+    let productList = [];
 
-            generateBtn.addEventListener('click', function () {
-                const barcode = document.getElementById('barcode').value.trim();
-                const price = document.getElementById('price').value.trim();
-                const name = document.getElementById('name').value.trim();
+    generateBtn.addEventListener('click', function () {
+        const barcode = document.getElementById('barcode').value.trim();
+        const price = document.getElementById('price').value.trim();
+        const name = document.getElementById('name').value.trim();
 
-                if (barcode && price && name) {
-                    const url = `/generate_barcode?data=${encodeURIComponent(barcode)}&price=${encodeURIComponent(price)}&name=${encodeURIComponent(name)}`;
-                    barcodeImage.src = url;
+        if (barcode && price && name) {
+            const url = `/generate_barcode?data=${encodeURIComponent(barcode)}&price=${encodeURIComponent(price)}&name=${encodeURIComponent(name)}`;
+            barcodeImage.src = url;
 
-                    // 👉 Wrap each character with a <span> tag
-                    barcodeText.innerHTML = barcode.split('').map(char => `<span>${char}</span>`).join('');
+            barcodeText.innerHTML = barcode.split('').map(char => `<span>${char}</span>`).join('');
 
-                    barcodeImage.onload = function () {
-                        adjustTextWidthAndSize();
-                    };
+            barcodeImage.onload = function () {
+                adjustTextWidthAndSize();
+            };
 
-                    setTimeout(adjustTextWidthAndSize, 300); // fallback in case onload fails
-                } else {
-                    alert("Please complete Barcode, Product Name, and Price fields.");
-                }
-            });
-
-        function renderProductList(data = productList) {
-    productListContainer.innerHTML = '';
-
-    data.forEach(product => {
-        const row = document.createElement('tr');
-        row.className = "border-b border-gray-200 hover:bg-gray-100 text-center";
-
-        row.innerHTML = `
-            <td class="py-2 px-4">${product.barcode}</td>
-            <td class="py-2 px-4">${product.name}</td>
-            <td class="py-2 px-4">₱${product.price}</td>
-            <td class="py-2 px-4">
-
-                <div class="flex justify-center space-x-2 mt-1">
-                    <button onclick="editProduct(${product.id})" class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 text-sm">Edit</button>
-                    <button onclick="deleteProduct('${product.barcode}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-sm">Delete</button>
-
-
-                </div>
-            </td>
-        `;
-
-        productListContainer.appendChild(row);
-    });
-}
-
-
-            function adjustTextWidthAndSize() {
-                const imageWidth = barcodeImage.offsetWidth;  // Get the width of the barcode image
-                const digitCount = barcodeText.innerText.length; // Number of characters in the barcode text
-                const fontSize = Math.max(10, imageWidth / (digitCount * 1.3)); // Adjust font size based on barcode width
-                const spacing = (imageWidth - digitCount * fontSize) / (digitCount - 1) + 6; // Adjust spacing between characters
-
-                // Adjust the width of barcode text and font size
-                barcodeText.style.width = imageWidth + 'px';
-                barcodeText.style.fontSize = fontSize + 'px';
-
-                // Adjust the spacing between the barcode text characters
-                const spans = barcodeText.getElementsByTagName('span');
-                for (let span of spans) {
-                    span.style.marginRight = `${spacing}px`;
-                }
-
-                // Adjust the overlay's width
-                overlay.style.width = `${imageWidth}px`;
-
-                // Adjust the position of the overlay relative to the barcode container
-                const barcodeContainer = barcodeImage.closest('.barcode-container');
-                const containerPadding = parseInt(window.getComputedStyle(barcodeContainer).paddingLeft) || 0; // Get container padding
-
-                // Set the overlay position to align exactly with the barcode width
-                overlay.style.left = `${containerPadding}px`;
-            }
-
-            function loadProductList() {
-                fetch('/products')
-                    .then(response => response.json())
-                    .then(data => {
-                        productList = data;
-                        renderProductList();
-                    });
-            }
-
-
-            function deleteProduct(barcode) {
-    fetch(`/delete/${barcode}`, {
-        method: 'DELETE'
-    })
-    .then(response => {
-        if (response.status === 204) {
-            location.reload();
+            setTimeout(adjustTextWidthAndSize, 300);
         } else {
-            response.text().then(text => {
-                alert('Failed to delete product: ' + text);
+            alert("Please complete Barcode, Product Name, and Price fields.");
+        }
+    });
+
+    function renderProductList(data = productList) {
+        productListContainer.innerHTML = '';
+
+        data.forEach((product, index) => {
+            const row = document.createElement('tr');
+            row.className = "border-b border-gray-200 hover:bg-gray-100 text-center";
+
+            row.innerHTML = `
+                <td class="px-4 py-2 text-center">${index + 1}</td>  <!-- Auto-numbered row -->
+                <td class="px-4 py-2 text-center">${product.barcode}</td>
+                <td class="px-4 py-2 text-center">${product.name}</td>
+                <td class="px-4 py-2 text-center">₱${product.price}</td>
+                <td class="px-4 py-2 text-center">
+                    <div class="flex justify-center space-x-2">
+                        <button onclick="editProduct(${product.id})" class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 text-sm">Edit</button>
+                        <button onclick="deleteProduct('${product.barcode}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-sm">Delete</button>
+                    </div>
+                </td>
+            `;
+
+            productListContainer.appendChild(row);
+        });
+    }
+
+    function adjustTextWidthAndSize() {
+        const imageWidth = barcodeImage.offsetWidth;
+        const digitCount = barcodeText.innerText.length;
+        const fontSize = Math.max(10, imageWidth / (digitCount * 1.3));
+        const spacing = (imageWidth - digitCount * fontSize) / (digitCount - 1) + 6;
+
+        barcodeText.style.width = imageWidth + 'px';
+        barcodeText.style.fontSize = fontSize + 'px';
+
+        const spans = barcodeText.getElementsByTagName('span');
+        for (let span of spans) {
+            span.style.marginRight = `${spacing}px`;
+        }
+
+        overlay.style.width = `${imageWidth}px`;
+
+        const barcodeContainer = barcodeImage.closest('.barcode-container');
+        const containerPadding = parseInt(window.getComputedStyle(barcodeContainer).paddingLeft) || 0;
+        overlay.style.left = `${containerPadding}px`;
+    }
+
+    function deleteProduct(barcode) {
+        if (confirm('Are you sure you want to delete this product?')) {
+            fetch(`/delete/${barcode}`, {
+                method: 'DELETE',
+            })
+            .then(response => {
+                if (response.ok || response.status === 204) {
+                    loadProductList(); // refresh list without reload
+                } else {
+                    response.text().then(text => {
+                        alert('Failed to delete: ' + text);
+                    });
+                }
+            })
+            .catch(error => {
+                alert('Error deleting: ' + error);
             });
         }
-    })
-    .catch(error => {
-        alert('Error deleting: ' + error);
+    }
+
+    function editProduct(id) {
+        const product = productList.find(p => p.id === id);
+        if (product) {
+            document.getElementById('barcode').value = product.barcode;
+            document.getElementById('name').value = product.name;
+            document.getElementById('price').value = product.price;
+        }
+    }
+
+    function loadProductList() {
+        fetch('/products')
+            .then(response => response.json())
+            .then(data => {
+                productList = data;
+                renderProductList();  // Renders with index-based numbering
+            });
+    }
+
+    searchInput.addEventListener('input', function () {
+        const query = searchInput.value.toLowerCase();
+        const filteredProducts = productList.filter(product =>
+            product.barcode.toLowerCase().includes(query) ||
+            product.name.toLowerCase().includes(query)
+        );
+        renderProductList(filteredProducts);
     });
-}
 
-            searchInput.addEventListener('input', function () {
-                const query = searchInput.value.toLowerCase();
-                const filteredProducts = productList.filter(product =>
-                    product.barcode.toLowerCase().includes(query) ||
-                    product.name.toLowerCase().includes(query)
-                );
-                renderProductList(filteredProducts);
-            });
+    clearListBtn.addEventListener('click', function () {
+        searchInput.value = '';
+        renderProductList();
+    });
 
-            clearListBtn.addEventListener('click', function () {
-                searchInput.value = '';
-                renderProductList();
-            });
-
-            sortSelect.addEventListener('change', function () {
-                const sortBy = sortSelect.value;
-                const sortedProducts = [...productList].sort((a, b) => {
-                    if (sortBy === 'barcode') return a.barcode.localeCompare(b.barcode);
-                    if (sortBy === 'name') return a.name.localeCompare(b.name);
-                    if (sortBy === 'price') return a.price - b.price;
-                });
-                renderProductList(sortedProducts);
-            });
-
-            loadProductList(); // Initially load product list when the page is ready
+    sortSelect.addEventListener('change', function () {
+        const sortBy = sortSelect.value;
+        const sortedProducts = [...productList].sort((a, b) => {
+            if (sortBy === 'barcode') return a.barcode.localeCompare(b.barcode);
+            if (sortBy === 'name') return a.name.localeCompare(b.name);
+            if (sortBy === 'price') return a.price - b.price;
         });
+        renderProductList(sortedProducts);
+    });
 
-function editProduct(id) {
-    const product = productList.find(p => p.id === id);
-    if (product) {
-        document.getElementById('barcode').value = product.barcode;
-        document.getElementById('name').value = product.name;
-        document.getElementById('price').value = product.price;
-    }
-}
-
- function deleteProduct(id) {
-    if (confirm('Are you sure you want to delete this product?')) {
-        fetch(`/delete/${id}`, {
-            method: 'DELETE',
-        })
-        .then(response => {
-            if (response.ok) {
-                // Optional: Reload or remove item from DOM
-                location.reload();
-            } else {
-                alert('Failed to delete product.');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Something went wrong.');
-        });
-    }
-}
-
-        fetch(`/delete/${id}`, {
-    method: 'DELETE',
-})
-.then(response => {
-    if (response.status === 204) {
-        location.reload();
-    } else {
-        return response.text().then(text => {
-            alert('Failed to delete: ' + text);
-        });
-    }
-})
-.catch(error => {
-    console.error('Fetch error:', error);
-    alert('Something went wrong.');
+    loadProductList(); // Initial load
 });
+</script>
 
-
-
-
-    </script>
 </body>
 </html>

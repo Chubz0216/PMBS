@@ -159,6 +159,45 @@ def delete_product(barcode):
     except Exception as e:
         return str(e), 500
 
+@app.route('/get_product/<int:product_id>', methods=['GET'])
+def get_product(product_id):
+    with get_db_connection() as conn:
+        product = conn.execute('SELECT * FROM products WHERE id = ?', (product_id,)).fetchone()
+
+    if product:
+        return jsonify({
+            'id': product['id'],
+            'barcode': product['barcode'],
+            'name': product['name'],
+            'price': product['price']
+        })
+    else:
+        return jsonify({'error': 'Product not found'}), 404
+
+@app.route('/update/<int:product_id>', methods=['POST'])
+@app.route('/update/<int:product_id>', methods=['POST'])
+def update_product(product_id):
+    if request.form.get('_method') == 'PUT':
+        barcode = request.form['barcode']
+        name = request.form['name']
+        price = request.form['price']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE products
+            SET barcode = ?, name = ?, price = ?
+            WHERE id = ?
+        """, (barcode, name, price, product_id))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({"message": "Product updated successfully!", "success": True})
+    else:
+        return jsonify({"error": "Invalid method"}), 405
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -7,6 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 import win32print
 import win32ui
 from PIL import ImageWin
+from flask import redirect, url_for, flash
 
 app = Flask(__name__)
 
@@ -175,28 +176,53 @@ def get_product(product_id):
         return jsonify({'error': 'Product not found'}), 404
 
 @app.route('/update/<int:product_id>', methods=['POST'])
+
+
 @app.route('/update/<int:product_id>', methods=['POST'])
 def update_product(product_id):
     if request.form.get('_method') == 'PUT':
-        barcode = request.form['barcode']
-        name = request.form['name']
-        price = request.form['price']
+        barcode = request.form['barcode'].strip()
+        name = request.form['name'].strip()
+        price = request.form['price'].strip()
+
+        # Basic validation
+        errors = {}
+        if not barcode:
+            errors['barcode'] = 'Barcode is required.'
+        if not name:
+            errors['name'] = 'Name is required.'
+        if not price:
+            errors['price'] = 'Price is required.'
+        else:
+            try:
+                float(price)
+            except ValueError:
+                errors['price'] = 'Price must be a number.'
+
+        if errors:
+            for field, error in errors.items():
+                flash(f"{field.capitalize()}: {error}", "danger")
+            return redirect(url_for('index'))  # or to the same form page
 
         conn = get_db_connection()
         cursor = conn.cursor()
-
         cursor.execute("""
             UPDATE products
             SET barcode = ?, name = ?, price = ?
             WHERE id = ?
         """, (barcode, name, price, product_id))
-
         conn.commit()
         conn.close()
 
-        return jsonify({"message": "Product updated successfully!", "success": True})
+        flash("Product updated successfully!", "success")
+        return redirect(url_for('index'))
     else:
-        return jsonify({"error": "Invalid method"}), 405
+        flash("Invalid method.", "danger")
+        return redirect(url_for('index'))
+
+app.secret_key = 'your_secret_key_here'
+
+
 
 
 if __name__ == '__main__':

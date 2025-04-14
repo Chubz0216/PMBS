@@ -87,3 +87,23 @@ body {
     width: 100%; /* Ensure the barcode image is responsive */
     height: auto;
 }
+.response-label {
+    margin-top: 20px;
+    padding: 10px;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}

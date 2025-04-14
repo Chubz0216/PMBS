@@ -20,8 +20,23 @@
             <div class="mb-8">
                 <h2 class="text-2xl font-semibold text-center text-white bg-indigo-500 py-2 rounded mb-6">Product Details</h2>
 
+           {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="response-label" id="flash-message">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" onclick="this.parentElement.remove()" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        {% endfor %}
+                        
+                    </div>
+                {% endif %}
+            {% endwith %}
 
-                <form method="POST" action="" id="product-form" class="space-y-4">
+                <form method="POST" action="{{ url_for('add_product') }}" id="product-form" class="space-y-4" data-product-id="{{ product_id }}">
                     <div>
                         <label for="barcode" class="block text-sm font-medium text-gray-700">Barcode:</label>
                         <input type="text" name="barcode" id="barcode" required
@@ -45,7 +60,7 @@
 
                         <!-- Hidden Update and Cancel Buttons -->
                         <div id="update-cancel-buttons" class="hidden">
-                            <button type="submit" name="action" value="update" class="w-24 bg-yellow-500 text-white py-2 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">Update</button>
+                            <button type="submit" name="action" value="update" id="update-button" class="w-24 bg-yellow-500 text-white py-2 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">Update</button>
                             <button type="button" id="cancel-edit" class="w-24 bg-red-500 text-white py-2 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">Cancel</button>
                         </div>
                     </div>
@@ -53,6 +68,7 @@
                     <div class="flex justify-center">
                         <button type="button" id="generate-barcode" class="w-60 bg-green-500 text-white py-2 text-lg font-semibold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200">Generate Barcode</button>
                     </div>
+
                 </form>
 
             </div>
@@ -102,21 +118,21 @@
     </div>
 
     <!-- Scrollable Table Container -->
-    <div class="overflow-y-auto max-h-96 border border-gray-200 rounded-md sm:min-h-[650px]">
-        <table class="table w-full text-left">
-            <thead class="sticky top-0 bg-white z-10">
-                <tr>
-                    <th class="py-2 px-4 border-b">Barcode</th>
-                    <th class="py-2 px-4 border-b">Product Name</th>
-                    <th class="py-2 px-4 border-b">Price</th>
-                    <th class="py-2 px-4 border-b">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="product-list">
-                <!-- JS will render product rows here -->
-            </tbody>
-        </table>
-    </div>
+<div class="overflow-y-auto max-h-96 border border-gray-200 rounded-md sm:min-h-[650px]">
+    <table class="table-fixed w-full text-left">
+        <thead class="sticky top-0 bg-white z-10">
+            <tr>
+                <th class="py-2 px-4 border-b text-center">Barcode</th>
+                <th class="py-2 px-4 border-b text-center">Product Name</th>
+                <th class="py-2 px-4 border-b text-center">Price</th>
+                <th class="py-2 px-4 border-b text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="product-list">
+            <!-- JS will render product rows here -->
+        </tbody>
+    </table>
+</div>
 
 </div>
 
@@ -270,10 +286,13 @@ function editProduct(productId) {
     fetch(`/get_product/${productId}`)
         .then(response => response.json())
         .then(product => {
+            console.log('Product data:', product); // Debugging line
+
             if (product.error) {
                 alert("Product not found!");
                 return;
             }
+
             // Fill the input fields with the product data
             document.getElementById('barcode').value = product.barcode;
             document.getElementById('name').value = product.name;
@@ -379,7 +398,7 @@ fetch(`/update/${productId}`, {
 .then(response => response.json())
 .then(data => {
     if (data.success) {
-        alert("Product updated successfully!");
+        alert("ayos!");
         // You can reload the page or update the UI accordingly
     } else {
         alert(data.error);
@@ -387,7 +406,120 @@ fetch(`/update/${productId}`, {
 })
 .catch(error => console.error('Error:', error));
 
+    fetch('/update/1', {
+    method: 'POST',
+    body: formData
+})
+.then(response => response.json())
+.then(data => {
+    const responseLabel = document.getElementById('response-label');
+
+    if (data.success) {
+        responseLabel.textContent = data.message;
+        responseLabel.style.color = 'green';
+    } else {
+        responseLabel.textContent = data.error || "An error occurred.";
+        responseLabel.style.color = 'red';
+
+        // Optionally, reset labels or placeholders here too
+    }
+});
+
+document.getElementById('product-form').addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevent default submit
+
+    const form = this;
+    const action = form.getAttribute('action'); // e.g. /update/18 OR /add
+    const methodOverride = form.querySelector('input[name="_method"]');
+    const responseLabel = document.getElementById('response-label');
+    const formData = new FormData(form);
+
+    // Determine if this is an UPDATE operation
+    const isUpdate = methodOverride && methodOverride.value === 'PUT';
+
+    fetch(action, {
+        method: 'POST', // Always POST, backend will read _method
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            responseLabel.textContent = data.message;
+            responseLabel.style.color = 'green';
+
+            // Reload the product list without full page reload (optional)
+            loadProductList();
+
+            // Reset form to default state after update
+            if (isUpdate) {
+                form.reset();
+                document.querySelector('[name="action"][value="add"]').classList.remove('hidden');
+                document.getElementById('update-cancel-buttons').classList.add('hidden');
+
+                if (methodOverride) methodOverride.remove();
+                form.setAttribute('action', '/add');
+            }
+        } else {
+            responseLabel.textContent = data.error || "May mali sa input.";
+            responseLabel.style.color = 'red';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        responseLabel.textContent = "May error habang nagse-save.";
+        responseLabel.style.color = 'red';
+    });
+});
+
+  function showSuccessMessage(message) {
+    const msgDiv = document.getElementById('successMessage');
+    msgDiv.innerText = message;
+    msgDiv.style.display = 'block';
+
+    setTimeout(() => {
+      msgDiv.style.display = 'none';
+    }, 3000); // mawala after 3 seconds
+  }
+
+  // If the server rendered a message (like after POST), show and auto-hide
+  const successDiv = document.getElementById('successMessage');
+  if (successDiv.innerText.trim() !== '') {
+    setTimeout(() => {
+      successDiv.style.display = 'none';
+    }, 3000);
+  }
+
+        const form = document.getElementById('product-form');
+
+form.addEventListener('submit', function (e) {
+    const action = e.submitter?.value;
+    if (action === 'add' || action === 'update') {
+        setTimeout(() => {
+            form.reset(); // clear input fields
+            document.getElementById('update-cancel-buttons').classList.add('hidden'); // hide update/cancel buttons
+        }, 500);
+    }
+});
+
+form.addEventListener('submit', function (e) {
+    const barcode = document.getElementById('barcode');
+    const name = document.getElementById('name');
+    const price = document.getElementById('price');
+
+    if (!barcode.value.trim() || !name.value.trim() || !price.value.trim()) {
+        e.preventDefault();
+        alert("Please complete all fields.");
+        return false;
+    }
+
+    if (Number(price.value) <= 0) {
+        e.preventDefault();
+        alert("Price must be greater than 0.");
+        return false;
+    }
+});
 
     </script>
+
 </body>
 </html>

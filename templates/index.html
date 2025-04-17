@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PINKLAINE PRODUCT MANAGEMENT BARCODE SYSTEM</title>
     <script src="https://cdn.tailwindcss.com"></script>  <!-- Tailwind CDN -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="static/style.css">
 </head>
 <body class="bg-gray-100">
+
 
     <!-- Main Container -->
     <div class="flex justify-center items-start min-h-screen bg-gray-200">
 
         <!-- Content Box for Product Details -->
-        <div class="flex flex-col bg-white rounded-lg shadow-xl p-8 w-full max-w-2xl mt-20 h-auto sm:min-h-[600px] ">
+        <div class="flex flex-col bg-white rounded-lg shadow-xl p-8 w-full max-w-2xl mt-10 h-auto sm:min-h-[600px] ">
 
 
             <!-- Product Details Section -->
@@ -31,12 +32,15 @@
                                 </button>
                             </div>
                         {% endfor %}
-                        
+
                     </div>
                 {% endif %}
             {% endwith %}
 
+
+
                 <form method="POST" action="{{ url_for('add_product') }}" id="product-form" class="space-y-4" data-product-id="{{ product_id }}">
+
                     <div>
                         <label for="barcode" class="block text-sm font-medium text-gray-700">Barcode:</label>
                         <input type="text" name="barcode" id="barcode" required
@@ -82,10 +86,10 @@
                     <img id="barcode-image" src="" alt="" class="max-w-xs">
 
                     <!-- White Box Overlay (Covering only the barcode number) -->
-                    <div id="barcode-overlay" class="absolute bottom-16 left-15 bg-white z-10 h-6"></div>
+                    <!--<div id="barcode-overlay" class="absolute bottom-16 left-15 bg-white z-10 h-6"></div>-->
 
                     <!-- Barcode Text (Positioned above the white box) -->
-                    <div id="barcode-text" class="absolute bottom-16 left-1/2 right-0 transform -translate-x-1/2 text-center text-sm text-gray-800 font-bold leading-tight z-20"></div>
+                    <!--<div id="barcode-text" class="absolute bottom-16 left-1/2 right-0 transform -translate-x-1/2 text-center text-sm text-gray-800 font-bold leading-tight z-20"></div>-->
                 </div>
 
                 <button id="print-barcode" class="w-32 bg-purple-500 text-white py-2 rounded-md hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -95,7 +99,7 @@
         </div>
 
 <!-- Product List Container (Larger) -->
-<div class="flex flex-col bg-white rounded-lg shadow-xl p-8 w-full mt-20 ml-4 sm:min-h-[865px]">
+<div class="flex flex-col bg-white rounded-lg shadow-xl p-8 w-full mt-10 ml-4 sm:min-h-[865px]">
 
     <h2 class="text-2xl font-semibold text-center text-white bg-indigo-500 py-2 rounded mb-6">
         Product List
@@ -121,13 +125,14 @@
 <div class="overflow-y-auto max-h-96 border border-gray-200 rounded-md sm:min-h-[650px]">
     <table class="table-fixed w-full text-left">
         <thead class="sticky top-0 bg-white z-10">
-            <tr>
-                <th class="py-2 px-4 border-b text-center">Barcode</th>
-                <th class="py-2 px-4 border-b text-center">Product Name</th>
-                <th class="py-2 px-4 border-b text-center">Price</th>
-                <th class="py-2 px-4 border-b text-center">Actions</th>
-            </tr>
-        </thead>
+    <tr>
+        <th class="py-2 px-4 border-b text-center">#</th> <!-- Added Number Column -->
+        <th class="py-2 px-4 border-b text-center">Barcode</th>
+        <th class="py-2 px-4 border-b text-center">Product Name</th>
+        <th class="py-2 px-4 border-b text-center">Price</th>
+        <th class="py-2 px-4 border-b text-center">Actions</th>
+    </tr>
+</thead>
         <tbody id="product-list">
             <!-- JS will render product rows here -->
         </tbody>
@@ -136,8 +141,13 @@
 
 </div>
 
+ <footer>
+    <p>Created by: <strong>Chubby Llamado</strong>, All Rights Reserved &copy; 2025</p>
+
+  </footer>
 
     <script>
+
         document.addEventListener("DOMContentLoaded", function () {
             const generateBtn = document.getElementById('generate-barcode');
             const barcodeText = document.getElementById('barcode-text');
@@ -172,14 +182,17 @@
                 }
             });
 
+
+
 function renderProductList(data = productList) {
     productListContainer.innerHTML = '';
 
-    data.forEach(product => {
+    data.forEach((product, index) => {
         const row = document.createElement('tr');
         row.className = "border-b border-gray-200 hover:bg-gray-100 text-center";
 
         row.innerHTML = `
+            <td class="py-2 px-4">${index + 1}</td>  <!-- Display index + 1 -->
             <td class="py-2 px-4">${product.barcode}</td>
             <td class="py-2 px-4">${product.name}</td>
             <td class="py-2 px-4">₱${product.price}</td>
@@ -233,6 +246,7 @@ function renderProductList(data = productList) {
             }
 
 
+
             function deleteProduct(barcode) {
     fetch(`/delete/${barcode}`, {
         method: 'DELETE'
@@ -251,12 +265,24 @@ function renderProductList(data = productList) {
     });
 }
 
-            searchInput.addEventListener('input', function () {
-                const query = searchInput.value.toLowerCase();
-                const filteredProducts = productList.filter(product =>
-                    product.barcode.toLowerCase().includes(query) ||
-                    product.name.toLowerCase().includes(query)
-                );
+           searchInput.addEventListener('input', function () {
+                const query = searchInput.value.toLowerCase().trim();
+
+                if (query === '') {
+                    // If search box is empty, show full list
+                    renderProductList(productList);
+                    return;
+                }
+
+                // Filter products based on exact match of barcode, name, or price
+                const filteredProducts = productList.filter(product => {
+                    const barcodeMatch = product.barcode.toLowerCase() === query;
+                    const nameMatch = product.name.toLowerCase() === query;
+                    const priceMatch = product.price.toString() === query;
+
+                    return barcodeMatch || nameMatch || priceMatch;
+                });
+
                 renderProductList(filteredProducts);
             });
 
@@ -519,7 +545,25 @@ form.addEventListener('submit', function (e) {
     }
 });
 
-    </script>
+fetch('/custom_barcode', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    code: '750103131130',
+    name: 'Milo 3-in-1',
+    price: '12.00'
+  })
+})
+.then(res => res.blob())
+.then(blob => {
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+});
 
+
+
+</script>
 </body>
 </html>

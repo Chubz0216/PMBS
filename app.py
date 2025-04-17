@@ -1,13 +1,15 @@
 from flask import Flask, render_template, request, send_file, redirect, url_for, jsonify
 import sqlite3
 import io
-from barcode import Code128
+from barcode import get_barcode_class
 from barcode.writer import ImageWriter
 from PIL import Image, ImageDraw, ImageFont
 import win32print
 import win32ui
 from PIL import ImageWin
 from flask import redirect, url_for, flash
+from utils.custom_barcode import create_ean13_image
+from routes.barcode_preview import barcode_preview
 
 app = Flask(__name__)
 
@@ -23,20 +25,30 @@ def index():
         products = conn.execute('SELECT * FROM products').fetchall()
     return render_template('index.html', products=products)
 
-@app.route('/add', methods=['GET', 'POST'])
-def add_product():
-    if request.method == 'POST':
-        barcode = request.form['barcode']
-        name = request.form['name']
-        price = request.form['price']
+def get_db_connection():
+    conn = sqlite3.connect('products.db', timeout=10)
+    conn.row_factory = sqlite3.Row
+    return conn
 
+@app.route('/add_product', methods=['POST'])
+def add_product():
+    barcode = request.form['barcode']
+    name = request.form['name']
+    price = request.form['price']
+
+    try:
         with get_db_connection() as conn:
             conn.execute('INSERT INTO products (barcode, name, price) VALUES (?, ?, ?)',
                          (barcode, name, price))
             conn.commit()
-        return redirect(url_for('index'))
-
-    return render_template('add_product.html')
+        flash("Product added successfully!", "success")
+        return redirect('/')
+    except sqlite3.IntegrityError as e:
+        if "UNIQUE constraint failed" in str(e):
+            flash("Barcode already exists.", "error")
+        else:
+            flash("Database error occurred.", "error")
+        return redirect('/')
 
 @app.route("/generate_barcode")
 def generate_barcode():
@@ -47,45 +59,13 @@ def generate_barcode():
     if not all([data, price, name]):
         return "Missing data", 400
 
-    # Barcode image generation with custom width
-    barcode_img_io = io.BytesIO()
-    options = {
-        'module_width': 0.5,  # Increase the width of the barcode
-    }
-    barcode = Code128(data, writer=ImageWriter())
-    barcode.write(barcode_img_io, options=options)
-    barcode_img_io.seek(0)
-
-    # Convert to PIL image
-    barcode_image = Image.open(barcode_img_io)
-
-    # Create new image with space for text
-    new_height = barcode_image.height + 100  # Increase the space for text
-    new_img = Image.new("RGB", (barcode_image.width, new_height), "white")
-    new_img.paste(barcode_image, (0, 0))
-
-    # Add price and name text with bigger font
-    draw = ImageDraw.Draw(new_img)
     try:
-        # Use bold font for price and a normal font for the product name
-        font_price = ImageFont.truetype("arialbd.ttf", 43)  # Bold Arial font
-        font_name = ImageFont.truetype("arial.ttf", 40)   # Regular Arial font for name
-    except IOError:
-        font_price = ImageFont.load_default()
-        font_name = ImageFont.load_default()
+        # Gumamit ng custom EAN-13 image generator
+        image_io, full_code = create_ean13_image(data, name, price)
+    except ValueError as e:
+        return str(e), 400
 
-    # Add price text with the peso sign
-    draw.text((10, barcode_image.height + -30), f"₱ {price}", font=font_price, fill="black")
-
-    # Add product name text
-    draw.text((10, barcode_image.height + 30), name, font=font_name, fill="black")
-
-    # Save result to BytesIO
-    final_io = io.BytesIO()
-    new_img.save(final_io, format="PNG")
-    final_io.seek(0)
-
-    return send_file(final_io, mimetype="image/png")
+    return send_file(image_io, mimetype="image/png")
 
 @app.route('/print_barcode')
 def print_barcode():
@@ -98,8 +78,10 @@ def print_barcode():
         return "Missing data", 400
 
     # Generate barcode image
-    barcode_img_io = io.BytesIO()
-    barcode = Code128(data, writer=ImageWriter())
+    EAN = get_barcode_class('ean13')
+    barcode = EAN(data, writer=ImageWriter())
+
+    barcode = UPC(data, writer=ImageWriter())
     barcode.write(barcode_img_io)
     barcode_img_io.seek(0)
 
@@ -223,7 +205,29 @@ def update_product(product_id):
 app.secret_key = 'your_secret_key_here'
 
 
+@app.route('/custom_barcode', methods=['POST'])
+def custom_barcode():
+    try:
+        data = request.json
+        code = data.get('code')
+        name = data.get('name')
+        price = data.get('price')
 
+        if not code or not name or not price:
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        img_buffer, full_code = create_ean13_image(code, name, price)
+
+        return send_file(
+            img_buffer,
+            mimetype='image/png',
+            as_attachment=False,
+            download_name=f"{full_code}.png"
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+app.register_blueprint(barcode_preview)
 
 if __name__ == '__main__':
     app.run(debug=True)

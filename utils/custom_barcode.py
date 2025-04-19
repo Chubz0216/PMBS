@@ -56,7 +56,7 @@ def create_ean13_image(code12, name, price):
     try:
         font_digit = ImageFont.truetype("arialbd.ttf", 25)
         font_price = ImageFont.truetype("arialbd.ttf", 28)
-        font_name = ImageFont.truetype("arial.ttf", 20)
+        font_name = ImageFont.truetype("arialbd.ttf", 20)
 
     except IOError:
         font_digit = font_price = font_name = ImageFont.load_default()
@@ -105,7 +105,7 @@ def create_ean13_image(code12, name, price):
     price_x = 10  # adjust mo ito para lumapit sa kaliwa
     name_x = 10  # same here
 
-    draw.text((price_x, text_y + 25), f"₱ {price}", font=font_price, fill="black")
+    draw.text((price_x, text_y + 25), f"₱ {price}.00", font=font_price, fill="black")
     draw.text((name_x, text_y + 55), name, font=font_name, fill="black")
 
     # Save image
